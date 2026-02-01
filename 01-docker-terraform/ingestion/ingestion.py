@@ -1,4 +1,5 @@
 import sys
+import click
 import pandas as pd
 from sqlalchemy import create_engine
 from tqdm.auto import tqdm
@@ -33,42 +34,50 @@ parse_dates = [
     "tpep_dropoff_datetime"
 ]
 
-df_iter = pd.read_csv(
-    prefix + 'yellow_tripdata_2021-01.csv.gz',
-    dtype=dtype,
-    parse_dates=parse_dates,
-    iterator=True,
-    chunksize=100000
-)
+    
+@click.command()
+@click.option('--pg-user', default='root', help='PostgreSQL user')
+@click.option('--pg-pass', default='root', help='PostgreSQL password')
+@click.option('--pg-host', default='localhost', help='PostgreSQL host')
+@click.option('--pg-port', default=5432, type=int, help='PostgreSQL port')
+@click.option('--pg-db', default='ny_taxi', help='PostgreSQL database name')
+@click.option('--target-table', default='yellow_taxi_data', help='Target table name')
+def run(pg_user, pg_pass, pg_host, pg_port, pg_db, target_table):
+    df_iter = pd.read_csv(
+        prefix + 'yellow_tripdata_2021-01.csv.gz',
+        dtype=dtype,
+        parse_dates=parse_dates,
+        iterator=True,
+        chunksize=100000
+    )
 
-conn = create_engine('postgresql://root:root@localhost:5432/ny_taxi')
+    conn = create_engine(f'postgresql://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}')
 
-# Schema
-# print(pd.io.sql.get_schema(df, name='yellow_taxi_data', con=engine))
+    # Schema
+    # print(pd.io.sql.get_schema(df, name='yellow_taxi_data', con=engine))
 
-first_chunk = next(df_iter)
+    first_chunk = next(df_iter)
 
-first_chunk.head(0).to_sql(
-    name="yellow_taxi_data",
-    con=conn,
-    if_exists="replace"
-)
+    first_chunk.head(0).to_sql(
+        name=target_table,
+        con=conn,
+        if_exists="replace"
+    )
 
-print("Table created")
+    print("Table created")
 
-first_chunk.to_sql(
-    name="yellow_taxi_data",
-    con=conn,
-    if_exists="append"
-)
-
-print("Inserted first chunk:", len(first_chunk))
-
-for df_chunk in tqdm(df_iter):
-    df_chunk.to_sql(
-        name="yellow_taxi_data",
+    first_chunk.to_sql(
+        name=target_table,
         con=conn,
         if_exists="append"
     )
-    print("Inserted chunk:", len(df_chunk))
-    
+
+    print("Inserted first chunk:", len(first_chunk))
+
+    for df_chunk in tqdm(df_iter):
+        df_chunk.to_sql(
+            name=target_table,
+            con=conn,
+            if_exists="append"
+        )
+        print("Inserted chunk:", len(df_chunk))

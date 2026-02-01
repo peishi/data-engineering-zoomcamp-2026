@@ -8,7 +8,7 @@ COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
 # Copy application code
-COPY pipeline.py pipeline.py
+COPY ingestion.py .
 
 # Set entry point
-ENTRYPOINT ["python", "pipeline.py"]
+ENTRYPOINT ["python", "ingestion.py"]
