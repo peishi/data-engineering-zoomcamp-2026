@@ -1,5 +1,15 @@
 gcloud-creds.json
 
+# dbt stuff
+04-analytics-engineering/taxi_rides_ny/target/
+04-analytics-engineering/taxi_rides_ny/dbt_packages/
+04-analytics-engineering/taxi_rides_ny/logs/
+
+# Data directory
+04-analytics-engineering/taxi_rides_ny/data/
+04-analytics-engineering/taxi_rides_ny/*.duckdb
+
+
 .python-version
 .vscode/*
 
